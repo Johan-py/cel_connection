@@ -17,7 +17,7 @@ clear
 
 echo -e "${GREEN}"
 echo "======================================"
-echo "   Termux SSH Auto Setup"
+echo "      Termux SSH Auto Setup"
 echo "======================================"
 echo -e "${RESET}"
 
@@ -39,7 +39,7 @@ termux-tools
 
 
 echo
-echo "[+] Configurando almacenamiento..."
+echo "[+] Activando almacenamiento..."
 
 yes | termux-setup-storage || true
 
@@ -53,28 +53,11 @@ ssh-keygen -A
 
 
 echo
-echo "[+] Configurando claves SSH..."
+echo "======================================"
+echo " Crea la contraseña SSH"
+echo "======================================"
 
-mkdir -p ~/.ssh
-
-chmod 700 ~/.ssh
-
-
-if [ ! -f ~/.ssh/id_ed25519 ]; then
-
-    ssh-keygen \
-    -t ed25519 \
-    -N "" \
-    -f ~/.ssh/id_ed25519
-
-else
-
-    echo "Clave SSH existente encontrada"
-
-fi
-
-
-chmod 600 ~/.ssh/id_ed25519
+passwd
 
 
 echo
@@ -84,16 +67,16 @@ pkill sshd 2>/dev/null || true
 
 sleep 2
 
-
 sshd
 
-
 sleep 3
+
 
 
 USER_TERMUX=$(whoami)
 
 PORT=8022
+
 
 
 echo
@@ -112,25 +95,15 @@ else
 fi
 
 
+
 echo
-echo "[+] Obteniendo informacion de red..."
+echo "[+] Guardando informacion..."
+
 
 NETWORK_INFO=$(ifconfig)
 
 
-echo "$NETWORK_INFO" > /data/data/com.termux/files/home/storage/downloads/network.txt
-
-
-IP=$(echo "$NETWORK_INFO" \
-| grep -E "inet " \
-| grep -v "127.0.0.1" \
-| awk '{print $2}' \
-| head -n1)
-
-
-if [ -z "$IP" ]; then
-    IP="BUSCAR_EN_IFCONFIG"
-fi
+echo "$NETWORK_INFO" > "$DOWNLOAD_DIR/network.txt"
 
 
 
@@ -145,26 +118,18 @@ cat > "$INFO_FILE" <<EOF
 
 
 USER:
+
 $USER_TERMUX
 
 
 PORT:
+
 $PORT
 
 
-SSH COMMAND:
+CONNECTION:
 
-ssh -p $PORT $USER_TERMUX@$IP
-
-
-IP:
-
-$IP
-
-
-PUBLIC SSH KEY:
-
-$(cat ~/.ssh/id_ed25519.pub)
+ssh -p $PORT $USER_TERMUX@IP_DEL_TELEFONO
 
 
 
@@ -173,14 +138,10 @@ NETWORK INFORMATION:
 $NETWORK_INFO
 
 
-PRIVATE KEY LOCATION:
 
-~/.ssh/id_ed25519
+STATUS:
 
-
-PUBLIC KEY LOCATION:
-
-~/.ssh/id_ed25519.pub
+SSH RUNNING
 
 
 ========================================
@@ -193,21 +154,30 @@ echo "======================================"
 echo -e "${GREEN} CONFIGURACION COMPLETA ${RESET}"
 echo "======================================"
 
+
 echo
+
 echo "Usuario:"
 echo "$USER_TERMUX"
 
+
 echo
+
 echo "Puerto:"
 echo "$PORT"
 
+
 echo
+
+echo "Conexion:"
+echo "ssh -p $PORT $USER_TERMUX@IP_DEL_TELEFONO"
+
+
+echo
+
 echo "Archivo generado:"
 echo "$INFO_FILE"
 
-echo
-echo "SSH:"
-echo "ssh -p $PORT $USER_TERMUX@$IP"
 
 echo
 echo "======================================"
