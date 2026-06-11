@@ -11,13 +11,14 @@ RESET="\033[0m"
 clear
 
 echo -e "${GREEN}"
-echo "=================================="
-echo "   Termux SSH Auto Provisioner"
-echo "=================================="
+echo "======================================"
+echo "      Termux SSH Auto Provisioner"
+echo "======================================"
 echo -e "${RESET}"
 
 
 echo "[+] Actualizando paquetes..."
+
 pkg update -y
 pkg upgrade -y
 
@@ -27,13 +28,13 @@ echo "[+] Instalando dependencias..."
 
 pkg install -y \
 openssh \
-termux-tools \
 net-tools \
-procps
+procps \
+termux-tools
 
 
 echo
-echo "[+] Configurando acceso al almacenamiento..."
+echo "[+] Habilitando acceso al almacenamiento..."
 
 termux-setup-storage || true
 
@@ -47,15 +48,15 @@ ssh-keygen -A
 
 
 echo
-echo "=================================="
-echo " Crea la contraseña SSH"
-echo "=================================="
+echo "======================================"
+echo " Configuracion de contraseña SSH"
+echo "======================================"
 
 passwd
 
 
 echo
-echo "[+] Reiniciando SSH..."
+echo "[+] Reiniciando servidor SSH..."
 
 pkill sshd 2>/dev/null || true
 
@@ -63,17 +64,10 @@ sleep 2
 
 sshd
 
-
 sleep 3
 
 
 USER_TERMUX=$(whoami)
-
-IP=$(ip addr show wlan0 2>/dev/null \
-| grep "inet " \
-| awk '{print $2}' \
-| cut -d/ -f1)
-
 
 PORT=8022
 
@@ -81,59 +75,73 @@ PORT=8022
 echo
 echo "[+] Verificando SSH..."
 
+
 if pgrep sshd >/dev/null; then
 
     echo -e "${GREEN}SSH ACTIVO${RESET}"
 
 else
 
-    echo -e "${RED}SSH NO INICIADO${RESET}"
+    echo -e "${RED}ERROR: SSH NO INICIADO${RESET}"
     exit 1
 
 fi
 
 
-if [ -z "$IP" ]; then
+echo
+echo "[+] Guardando informacion de red..."
 
-    echo -e "${YELLOW}No se pudo detectar IP WiFi${RESET}"
-
-    IP="IP_NO_DETECTADA"
-
-fi
+ifconfig > ~/network_info.txt
 
 
 cat > ~/ssh_connection.txt <<EOF
 USER=$USER_TERMUX
-IP=$IP
 PORT=$PORT
-SSH=$USER_TERMUX@$IP
+
+COMANDO SSH:
+ssh -p $PORT $USER_TERMUX@IP_DEL_TELEFONO
+
+NOTA:
+Revisa ~/network_info.txt para obtener la IP WiFi.
 EOF
 
 
 echo
-echo "=================================="
+echo "======================================"
 echo -e "${GREEN} CONFIGURACION COMPLETA ${RESET}"
-echo "=================================="
+echo "======================================"
 
 echo
-echo "Usuario:"
+
+echo "Usuario Termux:"
 echo "$USER_TERMUX"
 
 echo
-echo "IP:"
-echo "$IP"
 
-echo
-echo "Puerto:"
+echo "Puerto SSH:"
 echo "$PORT"
 
-echo
-echo "Conexion:"
-echo "ssh -p $PORT $USER_TERMUX@$IP"
 
 echo
-echo "Archivo guardado:"
+echo "Comando de conexion:"
+echo "ssh -p $PORT $USER_TERMUX@IP_DEL_TELEFONO"
+
+
+echo
+echo "======================================"
+echo " INFORMACION DE RED"
+echo "======================================"
+
+ifconfig
+
+
+echo
+echo "Archivos generados:"
 echo "~/ssh_connection.txt"
+echo "~/network_info.txt"
+
 
 echo
-echo "=================================="
+echo "======================================"
+echo -e "${GREEN} LISTO ${RESET}"
+echo "======================================"
