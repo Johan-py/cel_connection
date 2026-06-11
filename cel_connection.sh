@@ -118,7 +118,7 @@ echo "[+] Obteniendo informacion de red..."
 NETWORK_INFO=$(ifconfig)
 
 
-echo "$NETWORK_INFO" > /tmp/network.txt
+echo "$NETWORK_INFO" > /data/data/com.termux/files/home/storage/downloads/network.txt
 
 
 IP=$(echo "$NETWORK_INFO" \
