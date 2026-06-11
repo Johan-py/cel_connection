@@ -90,8 +90,41 @@ fi
 
 echo
 echo "[+] Guardando informacion de red..."
+DOWNLOAD_DIR="/data/data/com.termux/files/home/storage/downloads"
 
-ifconfig > ~/network_info.txt
+mkdir -p "$DOWNLOAD_DIR"
+
+
+ifconfig > "$DOWNLOAD_DIR/network_info.txt"
+
+
+cat > "$DOWNLOAD_DIR/ssh_connection.txt" <<EOF
+=================================
+ TERMUX SSH CONNECTION INFO
+=================================
+
+USER:
+$USER_TERMUX
+
+PORT:
+$PORT
+
+
+SSH COMMAND:
+
+ssh -p $PORT $USER_TERMUX@IP_DEL_TELEFONO
+
+
+NETWORK INFO:
+
+Archivo:
+network_info.txt
+
+Ubicacion:
+$DOWNLOAD_DIR/network_info.txt
+
+=================================
+EOFifconfig > ~/network_info.txt
 
 
 cat > ~/ssh_connection.txt <<EOF
