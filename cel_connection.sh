@@ -2,17 +2,22 @@
 
 set -e
 
+
 GREEN="\033[1;32m"
 RED="\033[1;31m"
-YELLOW="\033[1;33m"
 RESET="\033[0m"
+
+
+DOWNLOAD_DIR="/data/data/com.termux/files/home/storage/downloads"
+INFO_FILE="$DOWNLOAD_DIR/termux_ssh_info.txt"
 
 
 clear
 
+
 echo -e "${GREEN}"
 echo "======================================"
-echo "      Termux SSH Auto Provisioner"
+echo "   Termux SSH Auto Setup"
 echo "======================================"
 echo -e "${RESET}"
 
@@ -34,35 +39,54 @@ termux-tools
 
 
 echo
-echo "[+] Habilitando acceso al almacenamiento..."
+echo "[+] Configurando almacenamiento..."
 
-termux-setup-storage || true
+yes | termux-setup-storage || true
 
 sleep 3
 
 
 echo
-echo "[+] Generando claves SSH..."
+echo "[+] Generando host keys SSH..."
 
 ssh-keygen -A
 
 
 echo
-echo "======================================"
-echo " Configuracion de contraseña SSH"
-echo "======================================"
+echo "[+] Configurando claves SSH..."
 
-passwd
+mkdir -p ~/.ssh
+
+chmod 700 ~/.ssh
+
+
+if [ ! -f ~/.ssh/id_ed25519 ]; then
+
+    ssh-keygen \
+    -t ed25519 \
+    -N "" \
+    -f ~/.ssh/id_ed25519
+
+else
+
+    echo "Clave SSH existente encontrada"
+
+fi
+
+
+chmod 600 ~/.ssh/id_ed25519
 
 
 echo
-echo "[+] Reiniciando servidor SSH..."
+echo "[+] Reiniciando SSH..."
 
 pkill sshd 2>/dev/null || true
 
 sleep 2
 
+
 sshd
+
 
 sleep 3
 
@@ -89,22 +113,40 @@ fi
 
 
 echo
-echo "[+] Guardando informacion de red..."
-DOWNLOAD_DIR="/data/data/com.termux/files/home/storage/downloads"
+echo "[+] Obteniendo informacion de red..."
+
+NETWORK_INFO=$(ifconfig)
+
+
+echo "$NETWORK_INFO" > /tmp/network.txt
+
+
+IP=$(echo "$NETWORK_INFO" \
+| grep -E "inet " \
+| grep -v "127.0.0.1" \
+| awk '{print $2}' \
+| head -n1)
+
+
+if [ -z "$IP" ]; then
+    IP="BUSCAR_EN_IFCONFIG"
+fi
+
+
 
 mkdir -p "$DOWNLOAD_DIR"
 
 
-ifconfig > "$DOWNLOAD_DIR/network_info.txt"
 
+cat > "$INFO_FILE" <<EOF
+========================================
+       TERMUX SSH CONNECTION INFO
+========================================
 
-cat > "$DOWNLOAD_DIR/ssh_connection.txt" <<EOF
-=================================
- TERMUX SSH CONNECTION INFO
-=================================
 
 USER:
 $USER_TERMUX
+
 
 PORT:
 $PORT
@@ -112,31 +154,38 @@ $PORT
 
 SSH COMMAND:
 
-ssh -p $PORT $USER_TERMUX@IP_DEL_TELEFONO
+ssh -p $PORT $USER_TERMUX@$IP
 
 
-NETWORK INFO:
+IP:
 
-Archivo:
-network_info.txt
-
-Ubicacion:
-$DOWNLOAD_DIR/network_info.txt
-
-=================================
-EOFifconfig > ~/network_info.txt
+$IP
 
 
-cat > ~/ssh_connection.txt <<EOF
-USER=$USER_TERMUX
-PORT=$PORT
+PUBLIC SSH KEY:
 
-COMANDO SSH:
-ssh -p $PORT $USER_TERMUX@IP_DEL_TELEFONO
+$(cat ~/.ssh/id_ed25519.pub)
 
-NOTA:
-Revisa ~/network_info.txt para obtener la IP WiFi.
+
+
+NETWORK INFORMATION:
+
+$NETWORK_INFO
+
+
+PRIVATE KEY LOCATION:
+
+~/.ssh/id_ed25519
+
+
+PUBLIC KEY LOCATION:
+
+~/.ssh/id_ed25519.pub
+
+
+========================================
 EOF
+
 
 
 echo
@@ -145,36 +194,20 @@ echo -e "${GREEN} CONFIGURACION COMPLETA ${RESET}"
 echo "======================================"
 
 echo
-
-echo "Usuario Termux:"
+echo "Usuario:"
 echo "$USER_TERMUX"
 
 echo
-
-echo "Puerto SSH:"
+echo "Puerto:"
 echo "$PORT"
 
+echo
+echo "Archivo generado:"
+echo "$INFO_FILE"
 
 echo
-echo "Comando de conexion:"
-echo "ssh -p $PORT $USER_TERMUX@IP_DEL_TELEFONO"
-
-
-echo
-echo "======================================"
-echo " INFORMACION DE RED"
-echo "======================================"
-
-ifconfig
-
+echo "SSH:"
+echo "ssh -p $PORT $USER_TERMUX@$IP"
 
 echo
-echo "Archivos generados:"
-echo "~/ssh_connection.txt"
-echo "~/network_info.txt"
-
-
-echo
-echo "======================================"
-echo -e "${GREEN} LISTO ${RESET}"
 echo "======================================"
